@@ -2,8 +2,8 @@ import numpy as np
 import scipy
 from sklearn.covariance import ledoit_wolf
 import sys
-from priors import *
-from kernels import *
+from .priors import *
+from .kernels import *
 
 class ABCSMC(object):
 
@@ -75,8 +75,8 @@ class ABCSMC(object):
 
 
 	def dist(self, x):
-		if np.any(x.shape != self.data.shape):
-			raise ValueError('Simulated and observed data is of different shape')
+		#if np.any(x.shape != self.data.shape):
+		#	raise ValueError('Simulated and observed data is of different shape')
 
 		return self.dfunc(self.data,x)
 
