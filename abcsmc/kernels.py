@@ -1,7 +1,6 @@
 import numpy as np
 
 class FilippiOCM(object):
-	'''Filippi et al 2012, eq 12 & 13'''
 	def __init__(self,nparam,npart):
 
 		self.nparam = nparam

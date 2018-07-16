@@ -97,7 +97,7 @@ class ABCSMC(object):
 					mean=self.theta[t][Pid],cov=covariance).pdf(self.theta[t-1])
 
 		if  np.any(self.wt[t-1]) ==0 or np.any(kernelPdf)==0:
-			print ("Error computing Kernel or weights...", kernelPdf, self.wt[t-1])
+			print ("Kernel or weights error", kernelPdf, self.wt[t-1])
 			sys.exit(1)
 
 		priorproduct = self.priors.priorproduct(self.theta[t][Pid])
@@ -161,16 +161,16 @@ class ABCSMC(object):
 		while True:
 
 			if t ==0: 
-				#covariance = np.eye(self.nparam)
+				
 				theta_star = self.priors.sample()
 				x = self.simulator(theta_star)
 				rho = self.dist(x)
 
 			else:
-	            #np.random.seed()
+	            
 				ispart = int(np.random.choice(self.npart,size=1,p=self.wt[t-1]))
 				theta_old = self.theta[t-1][ispart]
-				#covariance = self.calculate_covariance(t, theta_old)
+				
 				theta_star = np.atleast_1d(scipy.stats.multivariate_normal.rvs(mean= theta_old,cov=covariance,size=1))
 				x = self.simulator(theta_star)
 				rho = self.dist(x)
