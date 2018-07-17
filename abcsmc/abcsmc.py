@@ -111,7 +111,7 @@ class ABCSMC(object):
 														 self.epsilon[t], self.wt[t-1])
 
 		if np.linalg.det(covariance) <1.E-15:
-			covariance  =  ledoit_wolf(self.theta[t-1])[0]#LW.get_var(self.theta[t-1])
+			covariance  =  ledoit_wolf(self.theta[t-1])[0]
 
 		return covariance
 
