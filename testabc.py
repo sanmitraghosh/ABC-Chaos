@@ -1,7 +1,7 @@
 import numpy as np
 from abcsmc.abcsmc import ABCSMC
 import scipy
-
+### Simple test problem with a bivariate Gaussian density
 
 means= np.array([0.037579, 0.573537])
 cov = np.array([[.01,.005],[.005,.01]])
@@ -9,7 +9,6 @@ data = np.random.multivariate_normal(means, cov, size=1000)
 
 def simulation(param):
     cov =np.array([[.01,.005],[.005,.01]])
-    #Ideally do something with the pool here
     return np.random.multivariate_normal(param, cov, size=1000)
 
 def dist_metric(d,x):

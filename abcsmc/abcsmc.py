@@ -6,6 +6,22 @@ from .priors import *
 from .kernels import *
 
 class ABCSMC(object):
+	# The ABC-SMC algorithm essentially follows the pseudocode in
+	# Algorithm 1 of "On optimality of kernels for approximate Bayesian computation using sequential Monte Carlo. S. Filippi"
+
+	# Inputs to the algorithm:
+
+	# nparam -- Number of model parameters to be inferred
+	# npart -- Number of particles
+	# data -- Data to be used for inference
+	# niters -- Number of SMC steps
+	# priors -- A list of prior distributions for the parameters. See `testabc.py`
+	# simulator -- A function that generates simulated data
+	# dfunc -- A distance function which receives the data and simulation and calulates a distance
+	# schedule -- A list/array of tolerances. Alternatively just the endpoints can be specified
+	# quantile -- If a quantile is specified an adaptive schedule will be used where the tolerance
+	#			  for the 't'-th SMC step will be calculated as the supplied percentile (quantile) 
+	#             of the distances of all particles from last step 't-1'
 
 	def __init__(self, nparam, npart, data, niter, priors, simulator, dfunc, schedule, quantile=None):
 
@@ -93,22 +109,20 @@ class ABCSMC(object):
 
 	def calculate_weight(self, t, Pid, covariance):
 
-		kernelPdf = scipy.stats.multivariate_normal(
-					mean=self.theta[t][Pid],cov=covariance).pdf(self.theta[t-1])
+		kernelPdf = [scipy.stats.multivariate_normal(mean=self.theta[t-1,p],cov=covariance).pdf(self.theta[t,Pid]) for p in range(self.npart)]
 
 		if  np.any(self.wt[t-1]) ==0 or np.any(kernelPdf)==0:
 			print ("Kernel or weights error", kernelPdf, self.wt[t-1])
 			sys.exit(1)
 
-		priorproduct = self.priors.priorproduct(self.theta[t][Pid])
+		priorproduct = self.priors.priorproduct(self.theta[t,Pid])
 
 		return priorproduct/(np.sum(self.wt[t-1]*kernelPdf))
 
 
 	def calculate_covariance(self, t):
 
-		covariance = self.pert_kernel.covariance(t, self.theta[t-1], self.delta[t-1],
-														 self.epsilon[t], self.wt[t-1])
+		covariance = self.pert_kernel.covariance(t, self.theta[t-1], self.delta[t-1], self.epsilon[t], self.wt[t-1])
 
 		if np.linalg.det(covariance) <1.E-15:
 			covariance  =  ledoit_wolf(self.theta[t-1])[0]
@@ -128,11 +142,11 @@ class ABCSMC(object):
 
 			if t==0:
 				for p in range(self.npart):
-					self.theta[t][p], self.delta[t][p] = self.stepper(t, p)
+					self.theta[t,p], self.delta[t,p] = self.stepper(t, p)
 
 				self.wt[t] =1./self.npart
 				if self.verbose:
-						print ("\t Stage:",t,"\t tol:",self.epsilon[t],"\t Params:",[np.mean(self.theta[t][:,i]) for i in range(self.nparam)])#change this later
+						print ('Stage: ',t,'tol: ',self.epsilon[t],'Params: ',[np.mean(self.theta[t,:,i]) for i in range(self.nparam)])
 
 				if self.adapt:
 					self.epsilon[t+1] = self.next_epsilon(t)
@@ -140,16 +154,18 @@ class ABCSMC(object):
 				t += 1
 
 			else:
+				### TODO: For OLCM, don't calculate covariance here do it inside stepper
 				covariance = self.calculate_covariance(t)
 
 				for p in range(self.npart):
-					self.theta[t][p], self.delta[t][p] = self.stepper(t, p, covariance)
-					self.wt[t][p] = self.calculate_weight(t, p, covariance)
+					# TODO: For OLCM return the OLCM covariance for particle p, and use this covariance to calculate wieght of theta[t,p]
+					self.theta[t,p], self.delta[t,p] = self.stepper(t, p, covariance) # TODO: For OLCM don't pass covariance here
+					self.wt[t,p] = self.calculate_weight(t, p, covariance)
 
 				self.wt[t] = self.wt[t]/np.sum(self.wt[t])
 
 				if self.verbose:
-					print( "\t Step:",t,"\t epsilon_t:",self.epsilon[t],"\t Params:",[np.mean(self.theta[t][:,i]) for i in range(self.nparam)])#change this later
+					print( 'Step: ',t,'epsilon-t: ',self.epsilon[t],'Params: ',[np.mean(self.theta[t,:,i]) for i in range(self.nparam)])
 
 				if self.adapt and t <self.niter-1:
 						self.epsilon[t+1] = self.next_epsilon(t)
@@ -169,9 +185,9 @@ class ABCSMC(object):
 			else:
 	            
 				ispart = int(np.random.choice(self.npart,size=1,p=self.wt[t-1]))
-				theta_old = self.theta[t-1][ispart]
-				
-				theta_star = np.atleast_1d(scipy.stats.multivariate_normal.rvs(mean= theta_old,cov=covariance,size=1))
+				theta_old = self.theta[t-1,ispart]
+				# TODO: For OLCM calculate covariance here and return back this covariance after perturbation
+				theta_star = scipy.stats.multivariate_normal.rvs(mean=theta_old,cov=covariance,size=1)
 				x = self.simulator(theta_star)
 				rho = self.dist(x)
 

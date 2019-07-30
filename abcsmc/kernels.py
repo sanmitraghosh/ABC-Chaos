@@ -1,6 +1,8 @@
 import numpy as np
 
 class FilippiOCM(object):
+	# This does not yet implement the OLCM version, for now it works on equation 13 in Filippi paper:
+	# On optimality of kernels for approximate Bayesian computation using sequential Monte Carlo.
 	def __init__(self,nparam,npart):
 
 		self.nparam = nparam
