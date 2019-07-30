@@ -8,6 +8,7 @@ from .kernels import *
 class ABCSMC(object):
 	# The ABC-SMC algorithm essentially follows the pseudocode in
 	# Algorithm 1 of "On optimality of kernels for approximate Bayesian computation using sequential Monte Carlo. S. Filippi"
+	# Right now only incorporates an Optimal Global Covariance kernel, equation 13 in the paper above.
 
 	# Inputs to the algorithm:
 
